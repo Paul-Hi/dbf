@@ -1,0 +1,56 @@
+[build-system]
+requires = ["scikit-build-core>=0.11", "pybind11>=3.0", "torch>=2.8.0"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "pydbf"
+version = "0.0.1"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+description = "DBF - Implementation of a differentiable bilateral filter using LibTorch."
+keywords = ["computer vision", "image processing", "differentiable", "bilateral filter", "optimization", "deep learning", "pytorch", "libtorch"]
+readme = "README.md"
+authors = [
+    { name = "Paul Himmler" },
+    { name = "Paul Himmler", email = "paul.himmler@fau.de" }
+]
+maintainers = [
+    { name = "Paul Himmler" },
+    { name = "Paul Himmler", email = "paul.himmler@fau.de" }
+]
+
+dependencies = ["torch>=2.8.0"]
+
+requires-python = ">=3.12.3"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12.3",
+    "Private :: Do Not Upload",
+]
+
+[project.urls]
+Homepage = "https://github.com/Paul-Hi/dbf"
+Repository = "https://github.com/Paul-Hi/dbf"
+
+[dependency-groups]
+torch = ["torch>=2.8.0"]
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+
+[tool.cibuildwheel]
+build-frontend = "build[uv]"
+enable = ["pypy"]
+
+[tool.cibuildwheel.pyodide]
+build-frontend = {name = "build", args = ["--exports", "whole_archive"]}
+
+[tool.cibuildwheel.ios]
+build-frontend = "build"
+xbuild-tools = ["cmake", "ninja"]
+
+[tool.cibuildwheel.android]
+build-frontend = "build"
+environment.ANDROID_API_LEVEL = "24"

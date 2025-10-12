@@ -1,0 +1,4 @@
+/build
+/.vscode
+/python/pydbf/__pycache__/
+/python/pydbf/*.so
