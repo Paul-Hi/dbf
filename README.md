@@ -1,6 +1,6 @@
 # DBF - Differentiable Bilateral Filter
 
-This repository offers a two implementations of a Differentiable Bilateral Filter built with LibTorch, featuring Python bindings for seamless integration. The filter provides edge-preserving smoothing and is suitable for optimization or deep learning tasks that require differentiability.
+This repository offers two implementations of a Differentiable Bilateral Filter built with LibTorch, featuring Python bindings for seamless integration. The filter provides edge-preserving smoothing and is suitable for optimization or deep learning tasks that require differentiability.
 The core functionality is provided by two functions: `bilateralFilter` (`bilateral_filter` in Python) and `bilateralFilterCuda` (`bilateral_filter_cuda` in Python). The first uses basic Torch tensor operations for clarity, while the second leverages custom CUDA kernels for higher performance and lower VRAM usage.
 
 ## Features
@@ -22,6 +22,7 @@ FetchContent_Declare(
     URL https://download.pytorch.org/libtorch/cu118/libtorch-shared-with-deps-2.2.0.zip # Change cu118 to match your CUDA version
 )
 ```
+
 Refer to [PyTorch LibTorch download page](https://pytorch.org/get-started/locally/) for the correct URL.
 
 **Python (`pyproject.toml`):**

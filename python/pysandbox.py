@@ -200,7 +200,7 @@ def input_optimization_test():
     img_tensor = tensor(img).permute(2, 0, 1).unsqueeze(
         0).float().to('cuda')  # (1, C, H, W)
 
-    noisy_input_init = torch.randn_like(img_tensor)
+    noisy_input_init = torch.randn_like(img_tensor).clamp(0.0, 1.0)
     noisy_input = nn.Parameter(noisy_input_init.clone())
 
     spatial_sigma = tensor([6.0, 6.0], device='cuda')
@@ -263,7 +263,7 @@ def input_optimization_test():
     noisy_input_init_np = noisy_input_init.detach(
     ).cpu().squeeze(0).permute(1, 2, 0).numpy()
     noisy_input_np = noisy_input.detach().cpu().squeeze(0).permute(1, 2, 0).numpy()
-    filtered_img_opt_np = filtered_img_opt_clamped.detach(
+    filtered_img_opt_np = img_tensor_clamped.detach(
     ).cpu().squeeze(0).permute(1, 2, 0).numpy()
 
     if SHOW_ONLINE:
