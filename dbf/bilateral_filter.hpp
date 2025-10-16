@@ -10,20 +10,20 @@ namespace dbf
      * \brief Applies a bilateral filter to the input.
      *
      * \param input Input tensor of shape (B, C, H, W).
-     * \param spatialSigma Tensor of shape (2,) representing spatial standard deviations (sigma_x, sigma_y).
+     * \param spatialSigma Tensor of shape (2,) representing spatial standard deviations (sigmaX, sigmaY).
      * Larger sigma means that pixels farther away from the center pixel will have a higher weight.
-     * \param rangeSigma Tensor of shape (1,) representing range standard deviation (sigma_r).
+     * \param rangeSigma Tensor of shape (1,) representing range standard deviation (sigmaR).
      * Larger sigma means that pixels with larger intensity differences will have a higher weight.
      * \param maxKernelSize Maximum kernel size to avoid excessive memory usage. Default is 19.
      *
      * \return A tensor of the same shape as input, representing the filtered output.
      *
      */
-    torch::Tensor bilateralFilter(
+    inline torch::Tensor bilateralFilter(
         const torch::Tensor& input,        // (B, C, H, W)
         const torch::Tensor& spatialSigma, // (2,) - (sigmaX, sigmaY)
-        const torch::Tensor& rangeSigma,    // (1,) - (sigmaR)
-        int maxKernelSize = 19           // Maximum kernel size to avoid excessive memory usage
+        const torch::Tensor& rangeSigma,   // (1,) - (sigmaR)
+        int maxKernelSize = 19             // Maximum kernel size to avoid excessive memory usage
     )
     {
         // Input validation
@@ -47,7 +47,7 @@ namespace dbf
         radius         = std::max(radius, 1);
         int kernelSize = radius * 2 + 1;
 
-        kernelSize        = std::min(kernelSize, maxKernelSize);
+        kernelSize = std::min(kernelSize, maxKernelSize);
 
         int padding = kernelSize / 2;
 
@@ -104,8 +104,100 @@ namespace dbf
         auto weightedSum = torch::sum(weights * unfolded, { -1, -2 }); // (B, C, H, W)
         auto weightsSum  = torch::sum(weights, { -1, -2 });            // (B, C, H, W)
 
-        auto output         = weightedSum / weightsSum;
+        auto output = weightedSum / weightsSum;
 
         return output;
+    }
+
+    /**
+     * \brief Forward pass of the bilateral filter in CUDA.
+     *
+     * \param input Input tensor of shape (B, C, H, W).
+     * \param spatialSigma Tensor of shape (2,) representing spatial standard deviations (sigmaX, sigmaY).
+     * Larger sigma means that pixels farther away from the center pixel will have a higher weight.
+     * \param rangeSigma Tensor of shape (1,) representing range standard deviation (sigmaR).
+     * Larger sigma means that pixels with larger intensity differences will have a higher weight.
+     * \param maxKernelSize Maximum kernel size to avoid excessive memory usage. Default is 65.
+     *
+     * \return A list of tensors: [output, kSum, weights, spatialKernel]
+     */
+    torch::autograd::tensor_list bilateralFilterCudaForward(
+        const torch::Tensor& input,        // (B, C, H, W)
+        const torch::Tensor& spatialSigma, // (2,) - (sigmaX, sigmaY)
+        const torch::Tensor& rangeSigma,   // (1,) - (sigmaR)
+        int maxKernelSize                  // Maximum kernel size to avoid excessive memory usage
+    );
+
+    /**
+     * \brief Backward pass of the bilateral filter in CUDA.
+     *
+     * \param ctx Autograd context containing saved information from forward pass.
+     * \param gradOutputs Gradient of the output tensor from the next layer.
+     *
+     * \return A list of gradients with respect to the inputs: [gradInput, gradSpatialSigma, gradRangeSigma, None]
+     */
+    torch::autograd::tensor_list bilateralFilterCudaBackward(
+        const torch::Tensor& gradOutput,    // (B, C, H, W)
+        const torch::Tensor& kSum,          // (B, C, H, W)
+        const torch::Tensor& weights,       // (B, C, H, W)
+        const torch::Tensor& input,         // (B, C, H, W)
+        const torch::Tensor& spatialSigma,  // (2,) - (sigmaX, sigmaY)
+        const torch::Tensor& rangeSigma,    // (1,) - (sigmaR)
+        const torch::Tensor& spatialKernel, // (kH, kW)
+        int maxKernelSize                   // Maximum kernel size to avoid excessive memory usage
+    );
+
+    /**
+     * \brief BilateralFilterCudaFn class implementing a bilateral filter with autograd support.
+     * \details This class uses the torch::autograd::Function interface and custom forward and backward implementations in CUDA kernels.
+     *
+     */
+    class BilateralFilterCudaFn : public torch::autograd::Function<BilateralFilterCudaFn>
+    {
+    public:
+        BilateralFilterCudaFn() = delete;
+
+        /**
+         * \brief Forward pass of the bilateral filter.
+         *
+         * \param ctx Autograd context to save information for backward pass.
+         * \param input Input tensor of shape (B, C, H, W).
+         * \param spatialSigma Tensor of shape (2,) representing spatial standard deviations (sigmaX, sigmaY).
+         * Larger sigma means that pixels farther away from the center pixel will have a higher weight.
+         * \param rangeSigma Tensor of shape (1,) representing range standard deviation (sigmaR).
+         * Larger sigma means that pixels with larger intensity differences will have a higher weight.
+         * \param maxKernelSize Maximum kernel size to avoid excessive memory usage. Default is 65.
+         *
+         * \return A tensor of the same shape as input, representing the filtered output.
+         */
+        static torch::Tensor forward(
+            torch::autograd::AutogradContext* ctx,
+            const torch::Tensor& input,        // (B, C, H, W)
+            const torch::Tensor& spatialSigma, // (2,) - (sigmaX, sigmaY)
+            const torch::Tensor& rangeSigma,   // (1,) - (sigmaR)
+            int maxKernelSize = 65             // Maximum kernel size to avoid excessive memory usage
+        );
+
+        /**
+         * \brief Backward pass of the bilateral filter.
+         *
+         * \param ctx Autograd context containing saved information from forward pass.
+         * \param gradOutputs Gradient of the output tensor from the next layer.
+         *
+         * \return A list of gradients with respect to the inputs: [gradInput, gradSpatialSigma, gradRangeSigma, None]
+         */
+        static torch::autograd::tensor_list backward(
+            torch::autograd::AutogradContext* ctx,
+            const torch::autograd::tensor_list& gradOutputs);
+    };
+
+    inline torch::Tensor bilateralFilterCuda(
+        const torch::Tensor& input,        // (B, C, H, W)
+        const torch::Tensor& spatialSigma, // (2,) - (sigmaX, sigmaY)
+        const torch::Tensor& rangeSigma,   // (1,) - (sigmaR)
+        int maxKernelSize = 65             // Maximum kernel size to avoid excessive memory usage
+    )
+    {
+        return BilateralFilterCudaFn::apply(input, spatialSigma, rangeSigma, maxKernelSize);
     }
 } // namespace dbf

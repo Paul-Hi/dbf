@@ -29,7 +29,7 @@ option(DBF_CREATE_PYTHON_BINDINGS "Create Python Bindings" ON)
 # ----- Find dependent modules -------
 # ------------------------------------
 if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-  set(CMAKE_CUDA_ARCHITECTURES 75)
+  set(CMAKE_CUDA_ARCHITECTURES 89)
 endif()
 
 include(FetchContent)

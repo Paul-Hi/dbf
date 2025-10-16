@@ -1,25 +1,52 @@
 # DBF - Differentiable Bilateral Filter
 
-This repository offers a straightforward implementation of a Differentiable Bilateral Filter built with LibTorch, featuring Python bindings for seamless integration. The filter provides edge-preserving smoothing and is suitable for optimization or deep learning tasks that require differentiability. While custom CUDA kernels could further enhance performance and memory usage, this implementation prioritizes simplicity and broad compatibility with LibTorch-supported platforms.
+This repository offers a two implementations of a Differentiable Bilateral Filter built with LibTorch, featuring Python bindings for seamless integration. The filter provides edge-preserving smoothing and is suitable for optimization or deep learning tasks that require differentiability.
+The core functionality is provided by two functions: `bilateralFilter` (`bilateral_filter` in Python) and `bilateralFilterCuda` (`bilateral_filter_cuda` in Python). The first uses basic Torch tensor operations for clarity, while the second leverages custom CUDA kernels for higher performance and lower VRAM usage.
 
 ## Features
 
 - Simple bilateral filtering with support for gradients
-- C++ Header-Only
 - C++ core using LibTorch
 - Python bindings using Pybind11
 
 ## Installation
 
-### C++ (Header-Only or Build and Link)
+Depending on your CUDA version, you may need to adjust how you fetch LibTorch in your top-level `CMakeLists.txt` for C++ and specify the correct PyTorch version in your `pyproject.toml` for Python.
 
-You can use the filter as a header-only library by including the relevant headers in your project:
+**C++ (LibTorch FetchContent):**
+In your `CMakeLists.txt`, set the appropriate LibTorch URL for your CUDA version. For example:
 
-```cpp
-#include "bilateral_filter.hpp"
+```cmake
+FetchContent_Declare(
+    torch
+    URL https://download.pytorch.org/libtorch/cu118/libtorch-shared-with-deps-2.2.0.zip # Change cu118 to match your CUDA version
+)
+```
+Refer to [PyTorch LibTorch download page](https://pytorch.org/get-started/locally/) for the correct URL.
+
+**Python (`pyproject.toml`):**
+Specify the PyTorch version and CUDA variant in your dependencies. For example:
+
+```toml
+[build-system]
+requires = [
+    "torch==2.2.0+cu118" # Change cu118 to match your CUDA version
+]
+
+dependencies = [
+    "torch==2.2.0+cu118" # Change cu118 to match your CUDA version
+]
+
+[dependency-groups]
+torch = ["torch==2.2.0+cu118"] # Change cu118 to match your CUDA version
 ```
 
-Alternatively, you can build and link the library using CMake:
+See [PyTorch installation instructions](https://pytorch.org/get-started/locally/) for the correct version string.
+
+
+### C++
+
+You can build and link the library using CMake:
 
 ```cmake
 add_subdirectory(dbf)
